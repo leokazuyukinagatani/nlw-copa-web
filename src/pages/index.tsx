@@ -40,8 +40,7 @@ export default function Home(props: HomeProps) {
         color: '#fff',
         title: `Não foi possivel criar o bolão`,
         icon: 'error',
-        confirmButtonColor: '#a5dc86'
-        
+        confirmButtonColor: '#a5dc86',
       })
     }
     
