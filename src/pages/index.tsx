@@ -3,7 +3,9 @@ import appPreviewImg from '../assets/app-nlw-copa-preview.png';
 import logoImg from '../assets/logo.svg';
 import usersAvatarExampleImg from '../assets/users-avatar-example.png';
 import iconCheckImg from '../assets/icon-check.svg';
-
+import { api } from "../lib/axios";
+import { FormEvent, useState } from "react";
+import Swal from 'sweetalert2'
 interface HomeProps {
   poolCount: number;
   guessCount: number;
@@ -11,7 +13,39 @@ interface HomeProps {
 }
 
 export default function Home(props: HomeProps) {
-  
+  const [poolTitle, setPoolTitle] = useState('')
+
+  async function handleCreatePool(event: FormEvent) {
+    event.preventDefault()
+
+    try {
+      const response = await api.post('/pools', {
+        title: poolTitle
+      })
+
+      const { code } = response.data
+
+      await navigator.clipboard.writeText(code)
+      Swal.fire({
+        background: '#121214',
+        color: '#fff',
+        title: `Codigo do bolão copiado para area de transferência:${code}`,
+        icon: 'success',
+        confirmButtonColor: '#a5dc86',
+      })
+      setPoolTitle('')
+    }catch(error) {
+      Swal.fire({
+        background: '#121214',
+        color: '#fff',
+        title: `Não foi possivel criar o bolão`,
+        icon: 'error',
+        confirmButtonColor: '#a5dc86'
+        
+      })
+    }
+    
+  }
   return (
     <div className="max-w-[1124px] h-screen mx-auto grid grid-cols-2 gap-28 items-center">
       <main>
@@ -29,13 +63,14 @@ export default function Home(props: HomeProps) {
           </strong>
         </div>
 
-        <form  className="mt-10 flex gap-2">
+        <form onSubmit={handleCreatePool} className="mt-10 flex gap-2">
           <input
             className="flex-1 px-6 py-4 rounded bg-gray-800 border border-gray-600 text-sm text-gray-100"
             type="text"
             required
             placeholder="Qual nome do seu bolão?"
-            
+            onChange={event => setPoolTitle(event.target.value)}
+            value={poolTitle}
           />
           <button
             className="bg-yellow-500 px-6 py-4 rounded text-gray-900 font-bold text-sm uppercase hover:bg-yellow-700"
@@ -79,3 +114,21 @@ export default function Home(props: HomeProps) {
   )
 }
 
+export async function getStaticProps(){
+  const [poolCountResponse,guessCountResponse,userCountResponse] = await Promise.all([
+    api.get('/pools/count'),
+    api.get('/pools/count'),
+    api.get('/users/count'),
+  ])
+
+
+  
+  return {
+    props: {
+      poolCount: poolCountResponse.data.count,
+      guessCount: guessCountResponse.data.count,
+      userCount: userCountResponse.data.count,
+    },
+    revalidate: 10 //valor em segundo para uma nova revalidação
+  }
+}
